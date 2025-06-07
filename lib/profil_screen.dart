@@ -10,8 +10,6 @@ class ProfilScreen extends StatefulWidget {
 class _ProfilScreenState extends State<ProfilScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(
-      title: const,
-    ));
+    return Scaffold(appBar: AppBar(title: const Text('PROFIL')));
   }
 }
