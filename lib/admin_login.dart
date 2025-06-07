@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/state_manager.dart';
+import 'regist_admin.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -61,7 +64,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.to(() => RegisterScreen());
+                  },
                   child: const Text('Forgot Password?'),
                 ),
               ),
@@ -117,8 +122,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('Create An Account '),
-                  GestureDetector(
-                    onTap: () {},
+                  TextButton(
+                    onPressed: () {
+                      Get.to(() => RegisterScreen());
+                    },
                     child: const Text(
                       'Sign Up',
                       style: TextStyle(color: Colors.blue),
