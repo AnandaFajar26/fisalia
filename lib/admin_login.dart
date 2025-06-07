@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/state_manager.dart';
 import 'regist_admin.dart';
+import 'admin_forgot.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -65,7 +66,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    Get.to(() => RegisterScreen());
+                    Get.to(() => AdminForgot());
                   },
                   child: const Text('Forgot Password?'),
                 ),
