@@ -1,4 +1,8 @@
+import 'package:fisalia/admin_login.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/get_navigation.dart';
+import 'admin_login.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -117,6 +121,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
               child: ElevatedButton(
                 onPressed: () {},
                 child: const Text('Save'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.to(() => const AdminLoginScreen());
+                },
+                child: const Text('ADMIN LOGIN'),
               ),
             ),
           ],
