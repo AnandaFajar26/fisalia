@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get/state_manager.dart';
 import 'regist_admin.dart';
 import 'admin_forgot.dart';
+import 'dasboard_admin.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -76,7 +77,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Get.to(() => AdminDashboard());
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo,
                     shape: RoundedRectangleBorder(
