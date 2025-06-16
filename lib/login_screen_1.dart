@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
+import 'package:get/state_manager.dart';
+import 'homescreen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -16,10 +19,7 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 30),
                 const Text(
                   "Welcome\nBack!",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -58,7 +58,9 @@ class LoginScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Get.to(() => HomeScreen());
+                    },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.indigo,
@@ -66,10 +68,7 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
-                      "Login",
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    child: const Text("Login", style: TextStyle(fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -87,7 +86,10 @@ class LoginScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.grey.shade200,
-                      child: const Icon(Icons.g_mobiledata, color: Colors.black87),
+                      child: const Icon(
+                        Icons.g_mobiledata,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     // Apple
@@ -122,7 +124,7 @@ class LoginScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
