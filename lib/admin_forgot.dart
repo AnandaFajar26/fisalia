@@ -21,7 +21,7 @@ class AdminForgot extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               const Text(
-                "Forgot\npassword?",
+                "Forgot\npassword admin?",
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),

@@ -26,7 +26,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             children: [
               const SizedBox(height: 40),
               const Text(
-                'Welcome Back!',
+                'LOGIN ADMIN',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 30),

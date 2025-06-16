@@ -1,6 +1,8 @@
+import 'package:fisalia/login_screen_1.dart';
 import 'package:flutter/material.dart';
 import 'awal.dart';
 import 'profil_screen.dart';
+import 'login_screen_1.dart';
 import 'package:get/get.dart';
 
 void main() {
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const ProfilScreen(),
+      home: const LoginScreen(),
     );
   }
 }

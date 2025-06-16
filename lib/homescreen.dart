@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
+import 'package:get/state_manager.dart';
+import 'admin_login.dart';
 
 class HomeScreen extends StatelessWidget {
   final Color primaryBlue = Color(0xFF045D72);
-  
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +20,12 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          CircleAvatar(
-            backgroundImage: AssetImage('assets/profile.jpg'), // Ganti sesuai asset
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              Get.to(() => AdminLoginScreen());
+            },
           ),
-          SizedBox(width: 10),
         ],
       ),
       body: ListView(
@@ -34,7 +38,10 @@ class HomeScreen extends StatelessWidget {
               hintText: 'Search any product...',
               filled: true,
               fillColor: Colors.grey[200],
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
 
@@ -45,18 +52,25 @@ class HomeScreen extends StatelessWidget {
             height: 80,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: ['laptop', 'komputer', 'kabel', 'aksesori', 'monitor'].map((item) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    children: [
-                      CircleAvatar(radius: 25, backgroundColor: Colors.grey[300], child: Icon(Icons.devices)),
-                      SizedBox(height: 5),
-                      Text(item),
-                    ],
-                  ),
-                );
-              }).toList(),
+              children:
+                  ['laptop', 'komputer', 'kabel', 'aksesori', 'monitor'].map((
+                    item,
+                  ) {
+                    return Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundColor: Colors.grey[300],
+                            child: Icon(Icons.devices),
+                          ),
+                          SizedBox(height: 5),
+                          Text(item),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
 
@@ -75,7 +89,13 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("50-40% OFF", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(
+                        "50-40% OFF",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       Text("Now in [product]"),
                       Text("All colours"),
                       SizedBox(height: 10),
@@ -83,7 +103,10 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                Image.asset('assets/shopping_girl.png', height: 100), // Ganti sesuai asset
+                Image.asset(
+                  'assets/shopping_girl.png',
+                  height: 100,
+                ), // Ganti sesuai asset
               ],
             ),
           ),
@@ -94,13 +117,21 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Deal of the Day", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                "Deal of the Day",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               Text("View all", style: TextStyle(color: Colors.blue)),
             ],
           ),
           Text("22h 55m 20s remaining"),
           SizedBox(height: 10),
-          dealItem("RAM Lexar 16 GB SODIMM", "₹1500", "₹2000", "assets/ram.png"),
+          dealItem(
+            "RAM Lexar 16 GB SODIMM",
+            "₹1500",
+            "₹2000",
+            "assets/ram.png",
+          ),
           dealItem("Lorem Ipsum Laptop", "₹2499", "₹4999", "assets/laptop.png"),
 
           SizedBox(height: 20),
@@ -109,7 +140,9 @@ class HomeScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.local_offer, color: Colors.orange),
             title: Text("Special Offers"),
-            subtitle: Text("We make sure you get the offer you need at best prices"),
+            subtitle: Text(
+              "We make sure you get the offer you need at best prices",
+            ),
           ),
 
           offerCard("Nvidia Geforce RTX 4090", "assets/rtx.png"),
@@ -117,7 +150,12 @@ class HomeScreen extends StatelessWidget {
           // 🔥 Trending Products
           sectionTitle("Trending Products", "Last Date 29/02/22"),
           dealItem("HP VICTUS 15", "₹650", "₹1599", "assets/hp.png"),
-          dealItem("Nvidia Geforce RTX 4090", "₹650", "₹1250", "assets/rtx.png"),
+          dealItem(
+            "Nvidia Geforce RTX 4090",
+            "₹650",
+            "₹1250",
+            "assets/rtx.png",
+          ),
 
           // ☀️ Summer Sale Banner
           SizedBox(height: 20),
@@ -138,8 +176,14 @@ class HomeScreen extends StatelessWidget {
         selectedItemColor: primaryBlue,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: "Cart"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: "Wishlist",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: "Cart",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Setting"),
         ],
@@ -147,7 +191,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget dealItem(String title, String price, String oldPrice, String imagePath) {
+  Widget dealItem(
+    String title,
+    String price,
+    String oldPrice,
+    String imagePath,
+  ) {
     return Card(
       child: ListTile(
         leading: Image.asset(imagePath, width: 50),
@@ -163,10 +212,7 @@ class HomeScreen extends StatelessWidget {
       color: Colors.amber[100],
       child: ListTile(
         title: Text(title),
-        trailing: ElevatedButton(
-          onPressed: () {},
-          child: Text("Visit now"),
-        ),
+        trailing: ElevatedButton(onPressed: () {}, child: Text("Visit now")),
         leading: Image.asset(imagePath, width: 50),
       ),
     );
