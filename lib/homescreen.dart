@@ -7,6 +7,8 @@ import 'profil_screen.dart';
 class HomeScreen extends StatelessWidget {
   final Color primaryBlue = Color(0xFF045D72);
 
+  HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
