@@ -1,10 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'package:get/state_manager.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homescreen.dart';
+import 'register_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isLoading = false;
+
+  void loginUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar(
+        "Login Gagal",
+        "Email dan password wajib diisi",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      Get.offAll(() => HomeScreen());
+    } on AuthException catch (e) {
+      Get.snackbar(
+        "Login Gagal",
+        e.message.contains("Invalid login credentials")
+            ? "Email atau password salah atau belum terdaftar"
+            : e.message,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Invalid login credentials",
+        "Email atau password salah atau belum terdaftar",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +79,10 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
                 TextField(
+                  controller: emailController,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.person),
-                    hintText: "Username or Email",
+                    hintText: "Email",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -33,11 +90,11 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock),
                     hintText: "Password",
-                    suffixIcon: const Icon(Icons.visibility),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -47,7 +104,9 @@ class LoginScreen extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Arahkan ke halaman forgot password kalau sudah dibuat
+                    },
                     child: const Text(
                       "Forgot Password?",
                       style: TextStyle(color: Colors.blue),
@@ -58,9 +117,7 @@ class LoginScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(() => HomeScreen());
-                    },
+                    onPressed: isLoading ? null : loginUser,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.indigo,
@@ -68,7 +125,18 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text("Login", style: TextStyle(fontSize: 16)),
+                    child:
+                        isLoading
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -82,7 +150,6 @@ class LoginScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Google
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.grey.shade200,
@@ -92,14 +159,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Apple
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.grey.shade200,
                       child: const Icon(Icons.apple, color: Colors.black87),
                     ),
                     const SizedBox(width: 16),
-                    // Facebook
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.grey.shade200,
@@ -109,19 +174,24 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 Center(
-                  child: RichText(
-                    text: TextSpan(
-                      text: "Create An Account ",
-                      style: const TextStyle(color: Colors.grey),
-                      children: [
-                        TextSpan(
-                          text: "Sign Up",
-                          style: TextStyle(
-                            color: Colors.indigo,
-                            decoration: TextDecoration.underline,
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.to(() => RegisterScreen());
+                    },
+                    child: RichText(
+                      text: const TextSpan(
+                        text: "Create An Account ",
+                        style: TextStyle(color: Colors.grey),
+                        children: [
+                          TextSpan(
+                            text: "Sign Up",
+                            style: TextStyle(
+                              color: Colors.indigo,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

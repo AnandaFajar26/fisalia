@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
 import 'package:get/state_manager.dart';
 import 'admin_login.dart';
+import 'profil_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final Color primaryBlue = Color(0xFF045D72);
@@ -23,7 +24,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.person),
             onPressed: () {
-              Get.to(() => AdminLoginScreen());
+              Get.to(() => ProfilScreen());
             },
           ),
         ],

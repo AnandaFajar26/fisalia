@@ -1,7 +1,103 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'login_screen_1.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final fullNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController(); // <- tambahan
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
+  bool isLoading = false;
+
+  void registerUser() async {
+    final fullName = fullNameController.text.trim();
+    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+
+    if ([fullName, email, password, confirmPassword].any((e) => e.isEmpty)) {
+      Get.snackbar(
+        "Gagal",
+        "Semua field wajib diisi",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      Get.snackbar(
+        "Gagal",
+        "Konfirmasi password tidak sesuai",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        Get.snackbar(
+          "Register Gagal",
+          "User tidak dapat dibuat",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      // Simpan ke tabel profiles
+      await Supabase.instance.client.from('profiles').insert({
+        'id': response.user!.id,
+        'full_name': fullName,
+        'phone_number': phone,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      Get.snackbar(
+        "Berhasil",
+        "Akun berhasil dibuat",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+
+      Get.offAll(() => const LoginScreen());
+    } on AuthException catch (e) {
+      Get.snackbar(
+        "Register Gagal",
+        e.message,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Terjadi kesalahan: ${e.toString()}",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +112,14 @@ class RegisterScreen extends StatelessWidget {
                 const SizedBox(height: 30),
                 const Text(
                   "Create an\naccount",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
                 TextField(
+                  controller: fullNameController,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.person),
-                    hintText: "Username or Email",
+                    hintText: "Full Name",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -33,11 +127,34 @@ class RegisterScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.email),
+                    hintText: "Email",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone),
+                    hintText: "Phone Number",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock),
                     hintText: "Password",
-                    suffixIcon: const Icon(Icons.visibility),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -45,37 +162,21 @@ class RegisterScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  controller: confirmPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.lock),
                     hintText: "Confirm Password",
-                    suffixIcon: const Icon(Icons.visibility),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                RichText(
-                  text: TextSpan(
-                    text: "By clicking the ",
-                    style: const TextStyle(color: Colors.grey),
-                    children: [
-                      TextSpan(
-                        text: "Register ",
-                        style: TextStyle(color: Colors.blue.shade700),
-                      ),
-                      const TextSpan(
-                        text: "button, you agree to the public offer",
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: isLoading ? null : registerUser,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: Colors.indigo,
@@ -83,64 +184,47 @@ class RegisterScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
-                      "Create Account",
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    child:
+                        isLoading
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text(
+                              "Create Account",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const Center(
-                  child: Text(
-                    "- OR Continue with -",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildSocialIcon(Icons.g_mobiledata),
-                    const SizedBox(width: 16),
-                    _buildSocialIcon(Icons.apple),
-                    const SizedBox(width: 16),
-                    _buildSocialIcon(Icons.facebook),
-                  ],
                 ),
                 const SizedBox(height: 32),
                 Center(
-                  child: RichText(
-                    text: TextSpan(
-                      text: "I Already Have an Account ",
-                      style: const TextStyle(color: Colors.grey),
-                      children: [
-                        TextSpan(
-                          text: "Login",
-                          style: TextStyle(
-                            color: Colors.indigo,
-                            decoration: TextDecoration.underline,
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.to(() => const LoginScreen());
+                    },
+                    child: RichText(
+                      text: const TextSpan(
+                        text: "I Already Have an Account ",
+                        style: TextStyle(color: Colors.grey),
+                        children: [
+                          TextSpan(
+                            text: "Login",
+                            style: TextStyle(
+                              color: Colors.indigo,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSocialIcon(IconData iconData) {
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: Colors.grey.shade200,
-      child: Icon(
-        iconData,
-        color: Colors.black87,
-        size: 24,
       ),
     );
   }
