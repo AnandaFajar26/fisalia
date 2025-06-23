@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/state_manager.dart';
 import 'regist_admin.dart';
 import 'admin_forgot.dart';
 import 'dasboard_admin.dart';
