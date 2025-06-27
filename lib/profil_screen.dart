@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
+import 'package:get/utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'admin_login.dart';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -15,7 +17,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
   String? fullName;
   String? email;
   String? avatarUrl;
-  bool isLoading = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -24,38 +26,91 @@ class _ProfilScreenState extends State<ProfilScreen> {
   }
 
   Future<void> loadUserProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user != null) {
-      final res =
-          await supabase.from('profiles').select().eq('id', user.id).single();
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        final res =
+            await supabase.from('profiles').select().eq('id', user.id).single();
 
-      setState(() {
-        fullName = res['full_name'];
-        email = user.email;
-        avatarUrl = res['profile_url'];
-      });
+        if (mounted) {
+          setState(() {
+            fullName = res['full_name'];
+            email = user.email;
+            avatarUrl = res['profile_url'];
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memuat profil: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> pickAndUploadImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      isLoading = true;
+    });
 
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      final fileName = '${supabase.auth.currentUser!.id}.png';
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
 
-      final storageResponse = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file, fileOptions: const FileOptions(upsert: true));
+      if (pickedFile != null) {
+        final fileBytes = await pickedFile.readAsBytes();
 
-      final publicURL = supabase.storage.from('avatars').getPublicUrl(fileName);
+        final fileName =
+            '${supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      await supabase
-          .from('profiles')
-          .update({'profile_url': publicURL})
-          .eq('id', supabase.auth.currentUser!.id);
-      setState(() => avatarUrl = publicURL);
+        await supabase.storage
+            .from('avatars')
+            .uploadBinary(
+              fileName,
+              fileBytes,
+              fileOptions: const FileOptions(
+                upsert: false,
+                contentType: 'image/png',
+              ),
+            );
+
+        final publicURL = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+
+        await supabase
+            .from('profiles')
+            .update({'profile_url': publicURL})
+            .eq('id', supabase.auth.currentUser!.id);
+
+        if (mounted) {
+          setState(() {
+            avatarUrl = publicURL;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengunggah gambar: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -69,6 +124,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
                       child: Stack(
@@ -77,10 +133,11 @@ class _ProfilScreenState extends State<ProfilScreen> {
                           CircleAvatar(
                             radius: 50,
                             backgroundImage:
-                                avatarUrl != null
+                                avatarUrl != null && avatarUrl!.isNotEmpty
                                     ? NetworkImage(avatarUrl!)
                                     : const AssetImage('assets/avatar.png')
                                         as ImageProvider,
+                            backgroundColor: Colors.grey[200],
                           ),
                           GestureDetector(
                             onTap: pickAndUploadImage,
@@ -112,9 +169,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       readOnly: true,
                     ),
                     const SizedBox(height: 30),
+
                     const Text(
                       "Business Address Details",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
@@ -135,6 +196,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     const SizedBox(height: 10),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Country'),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Get.to(() => AdminLoginScreen());
+                      },
+                      child: const Text("LOGIN ANDMIN"),
                     ),
                   ],
                 ),
