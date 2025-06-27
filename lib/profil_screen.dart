@@ -17,7 +17,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
   String? fullName;
   String? email;
   String? avatarUrl;
-  bool isLoading = true; // Diubah jadi true agar loading saat pertama kali buka
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -25,16 +25,13 @@ class _ProfilScreenState extends State<ProfilScreen> {
     loadUserProfile();
   }
 
-  /// Memuat data profil pengguna dari database Supabase
   Future<void> loadUserProfile() async {
-    // try-catch ditambahkan untuk menangani error koneksi atau lainnya
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
         final res =
             await supabase.from('profiles').select().eq('id', user.id).single();
 
-        // Memperbarui state dengan data yang didapat
         if (mounted) {
           setState(() {
             fullName = res['full_name'];
@@ -44,14 +41,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
         }
       }
     } catch (e) {
-      // Menampilkan pesan error jika gagal memuat profil
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal memuat profil: $e')));
       }
     } finally {
-      // Selalu hentikan loading indicator setelah selesai, baik berhasil maupun gagal
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -60,9 +55,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
     }
   }
 
-  /// Memilih gambar dari galeri dan mengunggahnya (kompatibel untuk mobile & web)
   Future<void> pickAndUploadImage() async {
-    // Menampilkan loading indicator saat proses dimulai
     setState(() {
       isLoading = true;
     });
@@ -75,37 +68,31 @@ class _ProfilScreenState extends State<ProfilScreen> {
       );
 
       if (pickedFile != null) {
-        // 1. Baca data gambar sebagai bytes (aman untuk semua platform)
         final fileBytes = await pickedFile.readAsBytes();
 
-        // 2. Buat nama file yang unik untuk menghindari penimpaan file lain
         final fileName =
             '${supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-        // 3. Gunakan .uploadBinary() agar kompatibel dengan Web dan Mobile
         await supabase.storage
             .from('avatars')
             .uploadBinary(
               fileName,
               fileBytes,
               fileOptions: const FileOptions(
-                upsert: false, // false agar tidak menimpa jika nama file sama
+                upsert: false,
                 contentType: 'image/png',
               ),
             );
 
-        // 4. Dapatkan URL publik dari gambar yang baru diunggah
         final publicURL = supabase.storage
             .from('avatars')
             .getPublicUrl(fileName);
 
-        // 5. Perbarui URL di database profil pengguna
         await supabase
             .from('profiles')
             .update({'profile_url': publicURL})
             .eq('id', supabase.auth.currentUser!.id);
 
-        // 6. Perbarui tampilan avatar di UI
         if (mounted) {
           setState(() {
             avatarUrl = publicURL;
@@ -113,14 +100,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
         }
       }
     } catch (e) {
-      // Menampilkan pesan error jika terjadi kegagalan
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal mengunggah gambar: $e')));
       }
     } finally {
-      // Selalu hentikan loading indicator setelah selesai
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -139,9 +124,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start, // Agar teks "Business Address" rata kiri
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
                       child: Stack(
@@ -187,7 +170,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // FITUR YANG SUDAH ADA TETAP DIPERTAHANKAN
                     const Text(
                       "Business Address Details",
                       style: TextStyle(
