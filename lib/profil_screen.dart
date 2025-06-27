@@ -14,40 +14,38 @@ class _ProfilScreenState extends State<ProfilScreen> {
   String? fullName;
   String? email;
   String? avatarUrl;
-  bool isLoading = true; // Diubah jadi true agar loading saat pertama kali buka
+  String? userRole; // Variabel baru untuk menyimpan role pengguna
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Memanggil fungsi untuk memuat data profil saat halaman pertama kali dibuka
     loadUserProfile();
   }
 
-  /// Memuat data profil pengguna dari database Supabase
+  /// Memuat data profil pengguna dari database Supabase, termasuk role
   Future<void> loadUserProfile() async {
-    // try-catch ditambahkan untuk menangani error koneksi atau lainnya
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
+        // Mengambil semua kolom, termasuk 'role'
         final res =
             await supabase.from('profiles').select().eq('id', user.id).single();
 
-        // Memperbarui state dengan data yang didapat
         setState(() {
           fullName = res['full_name'];
           email = user.email;
           avatarUrl = res['profile_url'];
+          userRole = res['role']; // Menyimpan role dari database
         });
       }
     } catch (e) {
-      // Menampilkan pesan error jika gagal memuat profil
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal memuat profil: $e')));
       }
     } finally {
-      // Selalu hentikan loading indicator setelah selesai, baik berhasil maupun gagal
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -58,7 +56,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   /// Memilih gambar dari galeri dan mengunggahnya ke Supabase Storage
   Future<void> pickAndUploadImage() async {
-    // Menampilkan loading indicator saat proses dimulai
     setState(() {
       isLoading = true;
     });
@@ -71,14 +68,10 @@ class _ProfilScreenState extends State<ProfilScreen> {
       );
 
       if (pickedFile != null) {
-        // 1. Baca data gambar sebagai bytes (aman untuk semua platform)
         final fileBytes = await pickedFile.readAsBytes();
-
-        // 2. Buat nama file yang unik berdasarkan ID pengguna dan timestamp
         final fileName =
             '${supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-        // 3. Gunakan .uploadBinary() agar kompatibel dengan Web dan Mobile
         await supabase.storage
             .from('avatars')
             .uploadBinary(
@@ -90,41 +83,62 @@ class _ProfilScreenState extends State<ProfilScreen> {
               ),
             );
 
-        // 4. Dapatkan URL publik dari gambar yang baru diunggah
         final publicURL = supabase.storage
             .from('avatars')
             .getPublicUrl(fileName);
 
-        // 5. Perbarui URL di database profil pengguna
         await supabase
             .from('profiles')
             .update({'profile_url': publicURL})
             .eq('id', supabase.auth.currentUser!.id);
 
-        // 6. Perbarui tampilan avatar di UI
         setState(() {
           avatarUrl = publicURL;
         });
       }
     } catch (e) {
-      // Menampilkan pesan error jika terjadi kegagalan
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Gagal mengunggah gambar: $e')));
       }
     } finally {
-      // Selalu hentikan loading indicator setelah selesai
       setState(() {
         isLoading = false;
       });
     }
   }
 
+  /// Fungsi untuk logout pengguna
+  Future<void> _signOut() async {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // Menangani error jika logout gagal
+    } finally {
+      // Kembali ke halaman login dan hapus semua halaman sebelumnya
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profil Saya")),
+      appBar: AppBar(
+        title: const Text("Profil Saya"),
+        actions: [
+          // Tombol Logout di AppBar
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOut,
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -146,7 +160,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
                                         as ImageProvider,
                             backgroundColor: Colors.grey[200],
                           ),
-                          // Tombol edit diletakkan di dalam GestureDetector
                           GestureDetector(
                             onTap: pickAndUploadImage,
                             child: const CircleAvatar(
@@ -176,7 +189,47 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       ),
                       readOnly: true,
                     ),
-                    // Anda bisa menambahkan detail lain di sini sesuai kebutuhan
+                    const SizedBox(height: 30),
+
+                    // === TOMBOL BARU DITAMBAHKAN DI SINI ===
+
+                    // 1. Tombol Edit Profil (selalu muncul)
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.person_outline),
+                      label: const Text('Edit Profil'),
+                      onPressed: () {
+                        // TODO: Navigasi ke halaman untuk mengedit profil
+                        // Contoh: Navigator.pushNamed(context, '/edit_profile');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Halaman Edit Profil belum dibuat!'),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // 2. Tombol Panel Admin (hanya muncul jika role adalah 'admin')
+                    if (userRole == 'admin')
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.admin_panel_settings_outlined),
+                        label: const Text('Masuk ke Panel Admin'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.teal, // Warna berbeda untuk admin
+                        ),
+                        onPressed: () {
+                          // TODO: Navigasi ke halaman dashboard admin
+                          // Contoh: Navigator.pushNamed(context, '/admin_dashboard');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Halaman Panel Admin belum dibuat!',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
