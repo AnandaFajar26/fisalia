@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
@@ -15,47 +14,110 @@ class _ProfilScreenState extends State<ProfilScreen> {
   String? fullName;
   String? email;
   String? avatarUrl;
-  bool isLoading = false;
+  bool isLoading = true; // Diubah jadi true agar loading saat pertama kali buka
 
   @override
   void initState() {
     super.initState();
+    // Memanggil fungsi untuk memuat data profil saat halaman pertama kali dibuka
     loadUserProfile();
   }
 
+  /// Memuat data profil pengguna dari database Supabase
   Future<void> loadUserProfile() async {
-    final user = supabase.auth.currentUser;
-    if (user != null) {
-      final res =
-          await supabase.from('profiles').select().eq('id', user.id).single();
+    // try-catch ditambahkan untuk menangani error koneksi atau lainnya
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        final res =
+            await supabase.from('profiles').select().eq('id', user.id).single();
 
-      setState(() {
-        fullName = res['full_name'];
-        email = user.email;
-        avatarUrl = res['profile_url'];
-      });
+        // Memperbarui state dengan data yang didapat
+        setState(() {
+          fullName = res['full_name'];
+          email = user.email;
+          avatarUrl = res['profile_url'];
+        });
+      }
+    } catch (e) {
+      // Menampilkan pesan error jika gagal memuat profil
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal memuat profil: $e')));
+      }
+    } finally {
+      // Selalu hentikan loading indicator setelah selesai, baik berhasil maupun gagal
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
+  /// Memilih gambar dari galeri dan mengunggahnya ke Supabase Storage
   Future<void> pickAndUploadImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    // Menampilkan loading indicator saat proses dimulai
+    setState(() {
+      isLoading = true;
+    });
 
-    if (pickedFile != null) {
-      final file = File(pickedFile.path);
-      final fileName = '${supabase.auth.currentUser!.id}.png';
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
 
-      final storageResponse = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file, fileOptions: const FileOptions(upsert: true));
+      if (pickedFile != null) {
+        // 1. Baca data gambar sebagai bytes (aman untuk semua platform)
+        final fileBytes = await pickedFile.readAsBytes();
 
-      final publicURL = supabase.storage.from('avatars').getPublicUrl(fileName);
+        // 2. Buat nama file yang unik berdasarkan ID pengguna dan timestamp
+        final fileName =
+            '${supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      await supabase
-          .from('profiles')
-          .update({'profile_url': publicURL})
-          .eq('id', supabase.auth.currentUser!.id);
-      setState(() => avatarUrl = publicURL);
+        // 3. Gunakan .uploadBinary() agar kompatibel dengan Web dan Mobile
+        await supabase.storage
+            .from('avatars')
+            .uploadBinary(
+              fileName,
+              fileBytes,
+              fileOptions: const FileOptions(
+                upsert: false,
+                contentType: 'image/png',
+              ),
+            );
+
+        // 4. Dapatkan URL publik dari gambar yang baru diunggah
+        final publicURL = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+
+        // 5. Perbarui URL di database profil pengguna
+        await supabase
+            .from('profiles')
+            .update({'profile_url': publicURL})
+            .eq('id', supabase.auth.currentUser!.id);
+
+        // 6. Perbarui tampilan avatar di UI
+        setState(() {
+          avatarUrl = publicURL;
+        });
+      }
+    } catch (e) {
+      // Menampilkan pesan error jika terjadi kegagalan
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengunggah gambar: $e')));
+      }
+    } finally {
+      // Selalu hentikan loading indicator setelah selesai
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -69,6 +131,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
                       child: Stack(
@@ -77,15 +140,17 @@ class _ProfilScreenState extends State<ProfilScreen> {
                           CircleAvatar(
                             radius: 50,
                             backgroundImage:
-                                avatarUrl != null
+                                avatarUrl != null && avatarUrl!.isNotEmpty
                                     ? NetworkImage(avatarUrl!)
                                     : const AssetImage('assets/avatar.png')
                                         as ImageProvider,
+                            backgroundColor: Colors.grey[200],
                           ),
+                          // Tombol edit diletakkan di dalam GestureDetector
                           GestureDetector(
                             onTap: pickAndUploadImage,
                             child: const CircleAvatar(
-                              radius: 14,
+                              radius: 15,
                               backgroundColor: Colors.white,
                               child: Icon(
                                 Icons.edit,
@@ -99,43 +164,19 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      initialValue: fullName ?? '',
+                      initialValue: fullName ?? 'Nama tidak tersedia',
                       decoration: const InputDecoration(labelText: 'Full Name'),
                       readOnly: true,
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
-                      initialValue: email ?? '',
+                      initialValue: email ?? 'Email tidak tersedia',
                       decoration: const InputDecoration(
                         labelText: 'Email Address',
                       ),
                       readOnly: true,
                     ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Business Address Details",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Pincode'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Address'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'City'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'State'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Country'),
-                    ),
+                    // Anda bisa menambahkan detail lain di sini sesuai kebutuhan
                   ],
                 ),
               ),
