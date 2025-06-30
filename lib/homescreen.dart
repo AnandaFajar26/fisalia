@@ -1,235 +1,219 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
-import 'package:get/state_manager.dart';
-import 'admin_login.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'checkout_screen.dart';
 import 'profil_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  final Color primaryBlue = Color(0xFF045D72);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-  HomeScreen({super.key});
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final Color primaryBlue = const Color(0xFF045D72);
+  List<dynamic> products = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  Future<void> fetchProducts() async {
+    final response = await Supabase.instance.client
+        .from('products')
+        .select()
+        .order('created_at', ascending: false);
+
+    setState(() {
+      products = response;
+      isLoading = false;
+    });
+  }
+
+  Future<void> addToCheckout(Map<String, dynamic> product) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    await Supabase.instance.client.from('orders').insert({
+      'user_id': user.id,
+      'product_title': product['title'],
+      'product_price': product['price'],
+      'product_image': product['image_url'],
+      'status': 'pending',
+      'created_at': DateTime.now().toIso8601String(),
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Produk ditambahkan ke Checkout')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: primaryBlue,
-        leading: Icon(Icons.menu),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.flash_on, color: Colors.white),
-            SizedBox(width: 5),
-            Text("Fisalia Computer"),
+            SizedBox(width: 8),
+            Text("Fisalia Mart"),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.person),
-            onPressed: () {
-              Get.to(() => ProfilScreen());
-            },
+            icon: const Icon(Icons.person),
+            onPressed: () => Get.to(() => const ProfilScreen()),
           ),
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.all(12),
-        children: [
-          // 🔍 Search Bar
-          TextField(
-            decoration: InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Search any product...',
-              filled: true,
-              fillColor: Colors.grey[200],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-
-          SizedBox(height: 20),
-
-          // 🔘 Kategori
-          SizedBox(
-            height: 80,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children:
-                  ['laptop', 'komputer', 'kabel', 'aksesori', 'monitor'].map((
-                    item,
-                  ) {
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 25,
-                            backgroundColor: Colors.grey[300],
-                            child: Icon(Icons.devices),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                padding: const EdgeInsets.all(12),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const TextField(
+                      decoration: InputDecoration(
+                        hintText: "Search any product...",
+                        border: InputBorder.none,
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 70,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children:
+                          ['laptop', 'komputer', 'kabel', 'monitor']
+                              .map(
+                                (e) => Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 22,
+                                        backgroundColor: Colors.grey[300],
+                                        child: const Icon(Icons.devices),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        e,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.pink[100],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                "50-40% OFF",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text("Now in greatest discount"),
+                              SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: null,
+                                child: Text("Shop Now"),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 5),
-                          Text(item),
-                        ],
+                        ),
+                        Image.asset(
+                          "assets/shopping_girl.png",
+                          height: 100,
+                          errorBuilder: (_, __, ___) {
+                            return const Icon(Icons.image_not_supported);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Deal of the Day",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 10),
+                  ...products.map((product) {
+                    return Card(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(12),
+                        leading: Image.network(
+                          product['image_url'] ?? '',
+                          width: 50,
+                          height: 50,
+                          errorBuilder:
+                              (_, __, ___) => const Icon(Icons.broken_image),
+                        ),
+                        title: Text(product['title'] ?? ''),
+                        subtitle: Text(product['description'] ?? '-'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: () => addToCheckout(product),
+                        ),
                       ),
                     );
                   }).toList(),
-            ),
-          ),
-
-          SizedBox(height: 20),
-
-          // 🛍 Promo Banner
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.pink[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "50-40% OFF",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text("Now in [product]"),
-                      Text("All colours"),
-                      SizedBox(height: 10),
-                      ElevatedButton(onPressed: () {}, child: Text("Shop Now")),
-                    ],
+                  const SizedBox(height: 20),
+                  const ListTile(
+                    leading: Icon(
+                      Icons.local_offer_outlined,
+                      color: Colors.orange,
+                    ),
+                    title: Text("Special Offers"),
+                    subtitle: Text("We make sure you get the best prices."),
                   ),
-                ),
-                Image.asset(
-                  'assets/shopping_girl.png',
-                  height: 100,
-                ), // Ganti sesuai asset
-              ],
-            ),
-          ),
-
-          SizedBox(height: 20),
-
-          // 🔔 Deal of the Day
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Deal of the Day",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ],
               ),
-              Text("View all", style: TextStyle(color: Colors.blue)),
-            ],
-          ),
-          Text("22h 55m 20s remaining"),
-          SizedBox(height: 10),
-          dealItem(
-            "RAM Lexar 16 GB SODIMM",
-            "₹1500",
-            "₹2000",
-            "assets/ram.png",
-          ),
-          dealItem("Lorem Ipsum Laptop", "₹2499", "₹4999", "assets/laptop.png"),
-
-          SizedBox(height: 20),
-
-          // 🧧 Special Offers
-          ListTile(
-            leading: Icon(Icons.local_offer, color: Colors.orange),
-            title: Text("Special Offers"),
-            subtitle: Text(
-              "We make sure you get the offer you need at best prices",
-            ),
-          ),
-
-          offerCard("Nvidia Geforce RTX 4090", "assets/rtx.png"),
-
-          // 🔥 Trending Products
-          sectionTitle("Trending Products", "Last Date 29/02/22"),
-          dealItem("HP VICTUS 15", "₹650", "₹1599", "assets/hp.png"),
-          dealItem(
-            "Nvidia Geforce RTX 4090",
-            "₹650",
-            "₹1250",
-            "assets/rtx.png",
-          ),
-
-          // ☀️ Summer Sale Banner
-          SizedBox(height: 20),
-          Image.asset("assets/summer_sale.png"),
-
-          // 🆕 New Arrivals
-          sectionTitle("New Arrivals", "Summer '25 Collections"),
-
-          // 🔰 Sponsored
-          SizedBox(height: 20),
-          Text("Sponsored", style: TextStyle(fontWeight: FontWeight.bold)),
-          Image.asset("assets/sponsored.png"),
-        ],
-      ),
-
-      // 🔽 Bottom Navigation
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: primaryBlue,
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Wishlist",
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
-            label: "Cart",
+            label: "Checkout",
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Setting"),
         ],
-      ),
-    );
-  }
-
-  Widget dealItem(
-    String title,
-    String price,
-    String oldPrice,
-    String imagePath,
-  ) {
-    return Card(
-      child: ListTile(
-        leading: Image.asset(imagePath, width: 50),
-        title: Text(title),
-        subtitle: Text("$price  (was $oldPrice)"),
-        trailing: Icon(Icons.arrow_forward_ios),
-      ),
-    );
-  }
-
-  Widget offerCard(String title, String imagePath) {
-    return Card(
-      color: Colors.amber[100],
-      child: ListTile(
-        title: Text(title),
-        trailing: ElevatedButton(onPressed: () {}, child: Text("Visit now")),
-        leading: Image.asset(imagePath, width: 50),
-      ),
-    );
-  }
-
-  Widget sectionTitle(String title, String sub) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-          Text("View all", style: TextStyle(color: Colors.blue)),
-        ],
+        onTap: (index) {
+          if (index == 1) {
+            Get.to(() => const CheckoutPage());
+          }
+        },
       ),
     );
   }

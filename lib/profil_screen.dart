@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/route_manager.dart';
-import 'package:get/utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'admin_login.dart';
@@ -18,6 +17,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
   String? email;
   String? avatarUrl;
   bool isLoading = true;
+
+  final pincodeController = TextEditingController();
+  final addressController = TextEditingController();
+  final cityController = TextEditingController();
+  final stateController = TextEditingController();
+  final countryController = TextEditingController();
 
   @override
   void initState() {
@@ -37,6 +42,12 @@ class _ProfilScreenState extends State<ProfilScreen> {
             fullName = res['full_name'];
             email = user.email;
             avatarUrl = res['profile_url'];
+
+            pincodeController.text = res['pincode'] ?? '';
+            addressController.text = res['address'] ?? '';
+            cityController.text = res['city'] ?? '';
+            stateController.text = res['state'] ?? '';
+            countryController.text = res['country'] ?? '';
           });
         }
       }
@@ -55,6 +66,28 @@ class _ProfilScreenState extends State<ProfilScreen> {
     }
   }
 
+  Future<void> saveAddress() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await supabase
+        .from('profiles')
+        .update({
+          'pincode': pincodeController.text,
+          'address': addressController.text,
+          'city': cityController.text,
+          'state': stateController.text,
+          'country': countryController.text,
+        })
+        .eq('id', userId);
+
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Alamat berhasil disimpan")));
+    }
+  }
+
   Future<void> pickAndUploadImage() async {
     setState(() {
       isLoading = true;
@@ -69,7 +102,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
       if (pickedFile != null) {
         final fileBytes = await pickedFile.readAsBytes();
-
         final fileName =
             '${supabase.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}.png';
 
@@ -169,7 +201,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       readOnly: true,
                     ),
                     const SizedBox(height: 30),
-
                     const Text(
                       "Business Address Details",
                       style: TextStyle(
@@ -179,30 +210,41 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
+                      controller: pincodeController,
                       decoration: const InputDecoration(labelText: 'Pincode'),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
+                      controller: addressController,
                       decoration: const InputDecoration(labelText: 'Address'),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
+                      controller: cityController,
                       decoration: const InputDecoration(labelText: 'City'),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
+                      controller: stateController,
                       decoration: const InputDecoration(labelText: 'State'),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
+                      controller: countryController,
                       decoration: const InputDecoration(labelText: 'Country'),
+                    ),
+                    const SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: saveAddress,
+                      icon: const Icon(Icons.save),
+                      label: const Text("Simpan Alamat"),
                     ),
                     const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: () {
                         Get.to(() => AdminLoginScreen());
                       },
-                      child: const Text("LOGIN ANDMIN"),
+                      child: const Text("LOGIN ADMIN"),
                     ),
                   ],
                 ),
